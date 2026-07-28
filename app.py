@@ -2,13 +2,9 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import time
-import urllib3
 
-# SSL 인증서 검증 우회 시 발생하는 경고 메시지 숨김 처리
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# GROBID 공식 퍼블릭 API 엔드포인트
-GROBID_PUBLIC_URL = "https://cloud.science-miner.com/grobid/api/processFulltextDocument"
+# GROBID 공식 퍼블릭 API 엔드포인트 (Hugging Face Spaces 기반 신규 안정화 서버)
+GROBID_PUBLIC_URL = "https://grobidOrg-grobid.hf.space/api/processFulltextDocument"
 
 def classify_reference_type(title: str, raw_type: str) -> str:
     """
@@ -53,21 +49,9 @@ if uploaded_file is not None:
                 'teiCoordinates': ['persName', 'figure', 'table', 'head', 'p', 'biblStruct', 'formula']
             }
             
-            # 일반 브라우저에서 접근하는 것처럼 위장하기 위한 User-Agent 헤더 추가
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-            
             try:
-                # verify=False와 headers를 함께 전달
-                response = requests.post(
-                    GROBID_PUBLIC_URL, 
-                    files=files, 
-                    data=data, 
-                    headers=headers, 
-                    timeout=180, 
-                    verify=False
-                )
+                # 새로운 Hugging Face 서버로 요청 (SSL 에러 우회 불필요)
+                response = requests.post(GROBID_PUBLIC_URL, files=files, data=data, timeout=180)
                 
                 if response.status_code == 200:
                     st.success(f"파싱 성공! (소요 시간: {round(time.time() - start_time, 2)}초)")
@@ -204,7 +188,6 @@ if uploaded_file is not None:
                     st.error(f"서버 응답 오류 (Status Code: {response.status_code})")
                     
             except requests.exceptions.Timeout:
-                st.error("요청 시간이 초과되었습니다. 퍼블릭 API 서버 응답이 지연되고 있으니 파일 용량을 줄이거나 다시 시도해 주세요.")
+                st.error("요청 시간이 초과되었습니다. 퍼블릭 API 서버 응답이 지연되고 있으니 잠시 후 다시 시도해 주세요.")
             except requests.exceptions.RequestException as e:
-                # 에러 메시지를 좀 더 명확하게 출력
-                st.error(f"API 연결 에러가 발생했습니다. 서버가 강제 종료되었거나 불안정합니다.\n\n상세 에러: {e}")
+                st.error(f"API 연결 에러가 발생했습니다: {e}")
