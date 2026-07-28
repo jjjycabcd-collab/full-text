@@ -53,9 +53,21 @@ if uploaded_file is not None:
                 'teiCoordinates': ['persName', 'figure', 'table', 'head', 'p', 'biblStruct', 'formula']
             }
             
+            # 일반 브라우저에서 접근하는 것처럼 위장하기 위한 User-Agent 헤더 추가
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            
             try:
-                # verify=False 를 추가하여 SSL 인증서 오류 우회
-                response = requests.post(GROBID_PUBLIC_URL, files=files, data=data, timeout=180, verify=False)
+                # verify=False와 headers를 함께 전달
+                response = requests.post(
+                    GROBID_PUBLIC_URL, 
+                    files=files, 
+                    data=data, 
+                    headers=headers, 
+                    timeout=180, 
+                    verify=False
+                )
                 
                 if response.status_code == 200:
                     st.success(f"파싱 성공! (소요 시간: {round(time.time() - start_time, 2)}초)")
@@ -194,4 +206,5 @@ if uploaded_file is not None:
             except requests.exceptions.Timeout:
                 st.error("요청 시간이 초과되었습니다. 퍼블릭 API 서버 응답이 지연되고 있으니 파일 용량을 줄이거나 다시 시도해 주세요.")
             except requests.exceptions.RequestException as e:
-                st.error(f"API 연결 에러가 발생했습니다: {e}")
+                # 에러 메시지를 좀 더 명확하게 출력
+                st.error(f"API 연결 에러가 발생했습니다. 서버가 강제 종료되었거나 불안정합니다.\n\n상세 에러: {e}")
