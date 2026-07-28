@@ -2,6 +2,10 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import time
+import urllib3
+
+# SSL 인증서 검증 우회 시 발생하는 경고 메시지 숨김 처리
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # GROBID 공식 퍼블릭 API 엔드포인트
 GROBID_PUBLIC_URL = "https://cloud.science-miner.com/grobid/api/processFulltextDocument"
@@ -50,8 +54,8 @@ if uploaded_file is not None:
             }
             
             try:
-                # 퍼블릭 서버는 처리 시간이 길어질 수 있으므로 timeout을 180초로 설정
-                response = requests.post(GROBID_PUBLIC_URL, files=files, data=data, timeout=180)
+                # verify=False 를 추가하여 SSL 인증서 오류 우회
+                response = requests.post(GROBID_PUBLIC_URL, files=files, data=data, timeout=180, verify=False)
                 
                 if response.status_code == 200:
                     st.success(f"파싱 성공! (소요 시간: {round(time.time() - start_time, 2)}초)")
